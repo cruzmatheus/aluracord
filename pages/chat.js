@@ -3,16 +3,19 @@ import React, { useEffect } from 'react';
 import appConfig from '../config.json';
 import { createClient } from '@supabase/supabase-js'
 import { Skeleton } from '@mui/material'
-import { DEFAULT_ATTRIBUTE } from '@mui/system/cssVars/getInitColorSchemeScript';
+import { useRouter } from 'next/router'
+import { ButtonSendSticker } from '../src/components/ButtonSendSticker';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export default function ChatPage() {
-    const [mensagem, setMensagem] = React.useState('');
-    const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
-    const [loading, setLoading] = React.useState(false);
+    const router = useRouter()
+    const usuarioLogado = router.query.username
+    const [mensagem, setMensagem] = React.useState('')
+    const [listaDeMensagens, setListaDeMensagens] = React.useState([])
+    const [loading, setLoading] = React.useState(false)
 
     useEffect(() => {
         supabase
@@ -25,7 +28,7 @@ export default function ChatPage() {
     function handleNovaMensagem(novaMensagem) {
         const mensagem = {
             // id: listaDeMensagens.length + 1,
-            de: 'vanessametonini',
+            de: usuarioLogado,
             texto: novaMensagem,
         };
 
@@ -119,6 +122,10 @@ export default function ChatPage() {
                                 color: appConfig.theme.colors.neutrals[200],
                             }}
                         />
+                        <ButtonSendSticker 
+                            onStickerClick={(sticker) => {
+                                handleNovaMensagem(':sticker: ' + sticker)
+                            }} />
                     </Box>
                 </Box>
             </Box>
@@ -219,13 +226,21 @@ function MessageList(props) {
                             >
                                 {(new Date().toLocaleDateString())}
                             </Text>
-                            <Button iconName="FaWindowClose" 
+
+                            {mensagem.texto.startsWith(":sticker:")
+                              ? (
+                                <Image src={mensagem.texto.replace(":sticker:", "")}/>
+                              )
+                              : (
+                                mensagem.texto
+                              )
+                            }
+                            {/* <Button iconName="FaWindowClose" 
                                 onClick={() => {
                                     handleRemoveDaLista(mensagem)
                                 }}
-                            />
+                            /> */}
                         </Box>
-                        {mensagem.texto}
                     </Text>
                 );
             })}

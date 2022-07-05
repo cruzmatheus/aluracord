@@ -1,5 +1,6 @@
 import { Box, Button, Text, TextField, Image } from '@skynexui/components';
 import React from 'react';
+import { useRouter } from 'next/router';
 import appConfig from '../config.json';
 
 function Titulo(props) {
@@ -32,6 +33,7 @@ function Titulo(props) {
 // export default HomePage
 
 export default function PaginaInicial() {
+  const router = useRouter()
   const [username, setUsername] = React.useState();
   let disabled = username != undefined && username.length < 3
 
@@ -63,6 +65,10 @@ export default function PaginaInicial() {
           {/* Formulário */}
           <Box
             as="form"
+            onSubmit={(event) => {
+              event.preventDefault()
+              router.push(`/chat?username=${username}`)
+            }}
             styleSheet={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
               width: { xs: '100%', sm: '50%' }, textAlign: 'center', marginBottom: '32px',
