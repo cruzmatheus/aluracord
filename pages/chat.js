@@ -1,33 +1,44 @@
 import { Box, Text, TextField, Image, Button } from '@skynexui/components';
-import React from 'react';
+import React, { useEffect } from 'react';
 import appConfig from '../config.json';
+import { createClient } from '@supabase/supabase-js'
+import { Skeleton } from '@mui/material'
+import { DEFAULT_ATTRIBUTE } from '@mui/system/cssVars/getInitColorSchemeScript';
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+
+export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export default function ChatPage() {
     const [mensagem, setMensagem] = React.useState('');
     const [listaDeMensagens, setListaDeMensagens] = React.useState([]);
+    const [loading, setLoading] = React.useState(false);
 
-    /*
-    // Usuário
-    - Usuário digita no campo textarea
-    - Aperta enter para enviar
-    - Tem que adicionar o texto na listagem
-    
-    // Dev
-    - [X] Campo criado
-    - [X] Vamos usar o onChange usa o useState (ter if pra caso seja enter pra limpar a variavel)
-    - [X] Lista de mensagens 
-    */
+    useEffect(() => {
+        supabase
+            .from("mensagens")
+            .select("*")
+            .order("created_at", { "ascending": false })
+            .then(({data}) => setListaDeMensagens(data))
+    }, [loading])
+
     function handleNovaMensagem(novaMensagem) {
         const mensagem = {
-            id: listaDeMensagens.length + 1,
+            // id: listaDeMensagens.length + 1,
             de: 'vanessametonini',
             texto: novaMensagem,
         };
 
-        setListaDeMensagens([
-            mensagem,
-            ...listaDeMensagens,
-        ]);
+        supabase
+        .from("mensagens")
+        .insert([mensagem])
+        .then(({data}) => {
+            setListaDeMensagens([
+                mensagem,
+                ...listaDeMensagens,
+            ]);
+        })
+
         setMensagem('');
     }
 
@@ -68,7 +79,7 @@ export default function ChatPage() {
                         padding: '16px',
                     }}
                 >
-                    <MessageList mensagens={listaDeMensagens} />
+                    <MessageList mensagens={listaDeMensagens} setListaDeMensagens={setListaDeMensagens} />
                     {/* {listaDeMensagens.map((mensagemAtual) => {
                         return (
                             <li key={mensagemAtual.id}>
@@ -135,6 +146,25 @@ function Header() {
 
 function MessageList(props) {
     console.log(props);
+    let {mensagens, setListaDeMensagens} = props
+
+    function handleRemoveDaLista(mensagem) {
+        const novaLista = mensagens.filter((msg) => msg.id != mensagem.id)
+        console.log("novaLista: " + novaLista)
+        setListaDeMensagens(novaLista)
+    }
+
+    if(mensagens.length == 0) {
+    return (
+        <>
+          <Skeleton variant="circular" width={50} height={50} />
+          <Skeleton variant="text" height="2.5rem" width="10rem" />
+          <Skeleton variant="text" height="2.5rem" />
+        </>
+    )
+
+    } else {
+    
     return (
         <Box
             tag="ul"
@@ -174,7 +204,7 @@ function MessageList(props) {
                                     display: 'inline-block',
                                     marginRight: '8px',
                                 }}
-                                src={`https://github.com/vanessametonini.png`}
+                                src={`https://github.com/${mensagem.de}.png`}
                             />
                             <Text tag="strong">
                                 {mensagem.de}
@@ -189,6 +219,11 @@ function MessageList(props) {
                             >
                                 {(new Date().toLocaleDateString())}
                             </Text>
+                            <Button iconName="FaWindowClose" 
+                                onClick={() => {
+                                    handleRemoveDaLista(mensagem)
+                                }}
+                            />
                         </Box>
                         {mensagem.texto}
                     </Text>
@@ -196,4 +231,5 @@ function MessageList(props) {
             })}
         </Box>
     )
+        }
 }
